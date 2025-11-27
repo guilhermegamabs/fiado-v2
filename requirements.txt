@@ -1,0 +1,25 @@
+﻿# requirements.txt (Versão Limpa para Produção)
+
+# Framework web principal
+Flask==3.0.3
+
+# Para gerenciamento de login e sessões
+Flask-Login==0.6.3
+
+# Servidor de produção WSGI
+gunicorn==22.0.0
+
+# Para criptografia de senhas
+Werkzeug==3.0.3
+
+# Driver para conectar ao PostgreSQL
+psycopg2-binary==2.9.9
+
+# Para ler o arquivo .env
+python-dotenv==1.0.1
+
+# Para "traduzir" a DATABASE_URL em produção
+dj-database-url==2.2.0
+
+# Para criar comandos de terminal (como o change-password)
+click==8.1.7

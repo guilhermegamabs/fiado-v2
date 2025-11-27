@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estação do Lanche V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 pb-20"> <header class="bg-white shadow-sm p-4 sticky top-0 z-10">
+        <h1 class="text-xl font-bold text-blue-600 text-center">Estação do Lanche</h1>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="p-4">
+            {% for category, message in messages %}
+                <div class="p-3 rounded-lg mb-2 text-center text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="p-4 max-w-md mx-auto">
+        {% block content %}{% endblock %}
+    </main>
+
+    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around py-3 z-50">
+        <a href="{{ url_for('dashboard') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
+            <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
+            <span class="text-xs">Resumo</span>
+        </a>
+        <a href="{{ url_for('registrar_fiado') }}" class="flex flex-col items-center text-blue-600">
+            <div class="bg-blue-100 p-3 rounded-full -mt-8 border-4 border-gray-50 shadow-lg">
+                <i class="fa-solid fa-plus text-xl font-bold"></i>
+            </div>
+            <span class="text-xs font-bold mt-1">Vender</span>
+        </a>
+        <a href="{{ url_for('clientes') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
+            <i class="fa-solid fa-users text-xl mb-1"></i>
+            <span class="text-xs">Clientes</span>
+        </a>
+        <a href="{{ url_for('financeiro') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
+            <i class="fa-solid fa-cash-register text-xl mb-1"></i>
+            <span class="text-xs">Caixa</span>
+        </a>
+    </nav>
+
+</body>
+</html>

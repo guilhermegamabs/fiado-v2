@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="text-xl font-bold mb-4">Registrar Fiado</h2>
+
+<form action="{{ url_for('registrar_fiado') }}" method="POST" class="space-y-4">
+    
+    <div>
+        <label class="block text-sm text-gray-500 mb-1">Valor (R$)</label>
+        <input type="number" step="0.01" name="valor" class="w-full p-4 text-3xl font-bold text-center border rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" placeholder="0.00" required inputmode="decimal">
+    </div>
+
+    <div>
+        <label class="block text-sm text-gray-500 mb-1">O que levou?</label>
+        <input type="text" name="descricao" class="w-full p-3 border rounded-lg" placeholder="Ex: Marmita + Refri">
+        
+        <div class="flex gap-2 mt-2 overflow-x-auto pb-2 no-scrollbar">
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Marmita'" 
+                class="px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-orange-200">
+                Marmita
+            </button>
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Lanche'" 
+                class="px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-orange-200">
+                Lanche
+            </button>
+
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Refri'" 
+                class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-blue-200">
+                Refri
+            </button>
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Agua'" 
+                class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-blue-200">
+                Água
+            </button>
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Suco'" 
+                class="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-blue-200">
+                Suco
+            </button>
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Cerveja'" 
+                class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-yellow-200">
+                Cerveja
+            </button>
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Energetico'" 
+                class="px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-purple-200">
+                Energético
+            </button>
+
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Cafe'" 
+                class="px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-xs font-bold whitespace-nowrap active:bg-amber-200">
+                Café
+            </button>
+            <button type="button" onclick="document.getElementsByName('descricao')[0].value='Cigarro'" 
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-xs font-bold whitespace-nowrap active:bg-gray-300">
+                Cigarro
+            </button>
+        </div>
+    </div>
+
+    <hr class="border-gray-200">
+
+    <div>
+        <label class="block text-sm text-gray-500 mb-1">Quem é o cliente?</label>
+        <input type="text" id="searchClient" placeholder="🔍 Buscar nome..." class="w-full p-2 mb-2 bg-gray-50 border border-gray-200 rounded text-sm">
+        
+        <div class="h-48 overflow-y-auto border rounded-lg bg-white" id="clientList">
+            {% for cliente in clientes %}
+            <label class="flex items-center p-3 border-b border-gray-100 hover:bg-blue-50 cursor-pointer client-item">
+                <input type="radio" name="cliente_id" value="{{ cliente.id }}" class="w-5 h-5 text-blue-600" required>
+                <span class="ml-3 font-medium text-gray-700 name-text">{{ cliente.nome }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg active:bg-blue-700">
+        Confirmar Fiado
+    </button>
+</form>
+
+<script>
+    // Script simples de busca
+    document.getElementById('searchClient').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let items = document.querySelectorAll('.client-item');
+        
+        items.forEach(item => {
+            let name = item.querySelector('.name-text').innerText.toLowerCase();
+            if (name.includes(filter)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,117 @@
+body { 
+    max-width: 960px;
+    margin: auto; 
+}
+
+header nav {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 1rem; 
+    margin-bottom: 2rem; 
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.nav-links a, .logout-button a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid var(--button-hover);
+    border-radius: 8px;
+    background-color: transparent;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.nav-links a:hover {
+    background-color: var(--button-hover);
+    color: var(--button-text-hover);
+}
+
+.logout-button a.contrast {
+    background-color: var(--contrast);
+    color: var(--background);
+    border-color: var(--contrast);
+    font-weight: bold;
+}
+
+.logout-button a.contrast:hover {
+    background-color: var(--contrast-hover);
+    border-color: var(--contrast-hover);
+}
+
+.alert { 
+    padding: 1rem; 
+    margin-bottom: 1rem; 
+    border-radius: 8px;
+    color: white; 
+    border: none;
+    text-align: center;
+}
+
+.alert-success { background-color: #28a745; }
+.alert-error { background-color: #dc3545; }
+.alert-warning { background-color: #ffc107; color: black; }
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap; 
+    gap: 1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.header-actions form {
+    margin-bottom: 0;
+}
+
+.client-list {
+    list-style: none; 
+    padding: 0;
+    
+    display: grid;
+    
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem; 
+}
+
+.client-card {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem; 
+    
+    background-color: var(--card-background); 
+    padding: 1.5rem 1rem; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); 
+    text-decoration: none;
+    color: var(--text-main); 
+    font-size: 1.1rem;
+    font-weight: bold;
+
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.client-card:hover {
+    transform: translateY(-5px); 
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); 
+    color: var(--accent); 
+}
+
+.client-card .fa-user {
+    color: var(--text-muted);
+}

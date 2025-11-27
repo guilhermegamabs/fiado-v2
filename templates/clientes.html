@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-4">
+    
+    <form action="{{ url_for('novo_cliente') }}" method="POST" class="flex gap-2">
+        <input type="text" name="nome" placeholder="Novo Cliente..." class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500" required>
+        <button type="submit" class="bg-blue-600 text-white px-4 rounded-lg font-bold">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </form>
+
+    <h3 class="text-gray-500 font-bold text-sm uppercase mt-4">Lista de Clientes</h3>
+    
+    <div class="space-y-3">
+        {% for cliente in clientes %}
+        <a href="{{ url_for('ver_cliente', cliente_id=cliente.id) }}" class="block bg-white p-4 rounded-lg shadow-sm border border-gray-100 active:scale-95 transition-transform flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-lg">
+                    {{ cliente.nome[0] }}
+                </div>
+                <span class="font-semibold text-gray-700">{{ cliente.nome }}</span>
+            </div>
+            
+            <div class="text-right">
+                {% if cliente.divida_total > 0 %}
+                    <span class="block text-red-600 font-bold">R$ {{ "%.2f"|format(cliente.divida_total) }}</span>
+                    <span class="text-xs text-red-400">Devendo</span>
+                {% else %}
+                    <span class="block text-green-600 font-bold">Em dia</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

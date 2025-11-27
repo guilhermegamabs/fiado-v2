@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-4">
+    
+    <h2 class="text-lg font-semibold text-gray-600">Hoje</h2>
+
+    <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-orange-400">
+            <p class="text-xs text-gray-500 uppercase">Vendeu Fiado</p>
+            <p class="text-2xl font-bold text-gray-800">R$ {{ "%.2f"|format(totals.fiado_hoje) }}</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+            <p class="text-xs text-gray-500 uppercase">Recebeu</p>
+            <p class="text-2xl font-bold text-gray-800">R$ {{ "%.2f"|format(totals.recebido_hoje) }}</p>
+        </div>
+    </div>
+
+    <div class="bg-blue-600 p-6 rounded-xl shadow-lg text-white mt-4 relative overflow-hidden">
+        <div class="relative z-10">
+            <p class="text-blue-100 text-sm font-medium mb-1">Total a Receber (Na Rua)</p>
+            <p class="text-4xl font-bold">R$ {{ "%.2f"|format(totals.total_rua) }}</p>
+            <p class="text-xs text-blue-200 mt-2">Acumulado de todos os clientes</p>
+        </div>
+        <i class="fa-solid fa-wallet absolute -bottom-4 -right-4 text-8xl text-blue-500 opacity-30"></i>
+    </div>
+
+    <div class="grid grid-cols-1 gap-3 mt-6">
+        <a href="{{ url_for('financeiro') }}" class="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm active:bg-gray-50">
+            <div class="flex items-center gap-3">
+                <div class="bg-purple-100 text-purple-600 p-2 rounded-lg">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+                <span class="font-medium">Fechar Caixa do Dia</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-gray-300"></i>
+        </a>
+    </div>
+
+</div>
+{% endblock %}
