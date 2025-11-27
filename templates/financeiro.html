@@ -159,7 +159,7 @@
             <a href="{{ url_for('financeiro', mes=item.mes, ano=item.ano) }}" class="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm active:bg-gray-50">
                 <div class="flex items-center gap-3">
                     <div class="bg-gray-100 w-10 h-10 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs">
-                        {{ item.mes }}/{{ item.ano|string|slice(2,4) }}
+                        {{ item.mes }}/{{ (item.ano|string)[-2:] }}
                     </div>
                     <span class="font-medium text-gray-700">Resultado do Mês</span>
                 </div>
