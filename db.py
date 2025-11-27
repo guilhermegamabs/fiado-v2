@@ -263,6 +263,19 @@ def get_dashboard_totals():
     conn.close()
     return {"fiado_hoje": fiado_hoje, "recebido_hoje": recebido_hoje, "total_rua": v_total - p_total}
 
+def inserir_despesa(descricao, valor, categoria):
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO despesas (descricao, valor, categoria, data_despesa) VALUES (%s, %s, %s, CURRENT_DATE)",
+                    (descricao, valor, categoria))
+        conn.commit()
+    except Exception as e:
+        print(f"Erro ao inserir despesa: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
+        
 def fechar_caixa_dia(dinheiro, moeda, cartao, pix, observacao=""):
     conn = get_connection()
     cur = conn.cursor()
