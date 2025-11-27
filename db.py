@@ -4,7 +4,6 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime
 from dotenv import load_dotenv
 
-# Carrega as senhas do arquivo .env
 load_dotenv()
 
 def get_connection():
@@ -36,10 +35,11 @@ def init_db():
                   pago BOOLEAN DEFAULT FALSE, data_pagamento TIMESTAMP,
                   FOREIGN KEY(cliente_id) REFERENCES clientes(id))''')
     
-    # Caixa Diario
-    c.execute('''CREATE TABLE IF NOT EXISTS caixa_diario 
+    c.execute('''CREATE TABLE IF NOT EXISTS caixa_detalhe 
                  (id SERIAL PRIMARY KEY, data_referencia DATE UNIQUE, 
-                  valor_vendas_vista REAL, observacao TEXT)''')
+                  dinheiro REAL DEFAULT 0.0, moeda REAL DEFAULT 0.0, 
+                  cartao REAL DEFAULT 0.0, pix REAL DEFAULT 0.0, 
+                  observacao TEXT)''')
     
     # Despesas
     c.execute('''CREATE TABLE IF NOT EXISTS despesas 
@@ -90,8 +90,6 @@ def atualizar_senha_usuario(user_id, novo_password_hash):
     conn.commit()
     conn.close()
 
-# --- LÓGICA FINANCEIRA ---
-
 def get_saldo_cliente(cliente_id):
     conn = get_connection()
     cur = conn.cursor()
@@ -110,15 +108,12 @@ def registrar_pagamento_abatimento(cliente_id, valor_pago):
     conn = get_connection()
     cur = conn.cursor()
     
-    # 1. Registrar pagamento
     cur.execute("INSERT INTO pagamentos (cliente_id, valor, data_pagamento) VALUES (%s, %s, NOW())", 
                  (cliente_id, valor_pago))
     
-    # 2. Baixa visual (Item por item)
     cur.execute("SELECT id, valor FROM fiados WHERE cliente_id = %s AND pago = FALSE ORDER BY data_registro ASC", (cliente_id,))
     itens_abertos = cur.fetchall()
     
-    # Calcula saldo histórico disponível
     cur.execute("SELECT SUM(valor) as t FROM pagamentos WHERE cliente_id = %s", (cliente_id,))
     res_tot = cur.fetchone()
     total_pago_historico = res_tot['t'] if res_tot['t'] else 0.0
@@ -141,7 +136,6 @@ def registrar_pagamento_abatimento(cliente_id, valor_pago):
     conn.commit()
     conn.close()
 
-# --- CLIENTES E FIADOS ---
 
 def buscar_clientes_com_divida():
     conn = get_connection()
@@ -152,7 +146,7 @@ def buscar_clientes_com_divida():
             c.id,
             c.nome,
             -- Calcula a diferença entre Fiados e Pagamentos para cada cliente
-            COALESCE(fiado_sum.total_fiado, 0) - COALESCE(pago_sum.total_pago, 0) AS divida_total
+            COALESCE(fiado_sum.total_fiado, 0.0) - COALESCE(pago_sum.total_pago, 0.0) AS divida_total
         FROM clientes c
         LEFT JOIN (
             SELECT cliente_id, SUM(valor) AS total_fiado 
@@ -183,13 +177,15 @@ def buscar_cliente(id):
 
 def inserir_cliente(nome):
     conn = get_connection()
-    conn.cursor().execute("INSERT INTO clientes (nome) VALUES (%s)", (nome,))
+    cur = conn.cursor()
+    cur.execute("INSERT INTO clientes (nome) VALUES (%s)", (nome,))
     conn.commit()
     conn.close()
 
 def inserir_fiado(cliente_id, descricao, valor):
     conn = get_connection()
-    conn.cursor().execute("INSERT INTO fiados (cliente_id, descricao, valor, data_registro) VALUES (%s, %s, %s, NOW())",
+    cur = conn.cursor()
+    cur.execute("INSERT INTO fiados (cliente_id, descricao, valor, data_registro) VALUES (%s, %s, %s, NOW())",
                  (cliente_id, descricao, valor))
     conn.commit()
     conn.close()
@@ -214,14 +210,16 @@ def buscar_itens_pendentes(cliente_id):
             credito_disponivel -= valor_original
         elif credito_disponivel > 0:
             valor_restante = valor_original - credito_disponivel
-            item['valor_restante'] = valor_restante
-            item['status'] = 'Parcial'
-            itens_para_exibir.append(item)
+            item_dict = dict(item) 
+            item_dict['valor_restante'] = valor_restante
+            item_dict['status'] = 'Parcial'
+            itens_para_exibir.append(item_dict)
             credito_disponivel = 0
         else:
-            item['valor_restante'] = valor_original
-            item['status'] = 'Pendente'
-            itens_para_exibir.append(item)
+            item_dict = dict(item) 
+            item_dict['valor_restante'] = valor_original
+            item_dict['status'] = 'Pendente'
+            itens_para_exibir.append(item_dict)
             
     return itens_para_exibir[::-1]
 
@@ -241,8 +239,6 @@ def excluir_cliente_completo(cliente_id):
     cur.execute("DELETE FROM clientes WHERE id = %s", (cliente_id,))
     conn.commit()
     conn.close()
-
-# --- DASHBOARD E FINANCEIRO ---
 
 def get_dashboard_totals():
     conn = get_connection()
@@ -264,70 +260,82 @@ def get_dashboard_totals():
     conn.close()
     return {"fiado_hoje": fiado_hoje, "recebido_hoje": recebido_hoje, "total_rua": v_total - p_total}
 
-def fechar_caixa_dia(valor_venda_vista, observacao=""):
+def fechar_caixa_dia(dinheiro, moeda, cartao, pix, observacao=""):
     conn = get_connection()
     cur = conn.cursor()
-    # No Postgres usamos ON CONFLICT para Upsert (mas precisa de Constraint Unique)
-    # Vamos fazer a lógica manual para garantir
-    cur.execute("SELECT id FROM caixa_diario WHERE data_referencia = CURRENT_DATE")
+    
+    cur.execute("SELECT id FROM caixa_detalhe WHERE data_referencia = CURRENT_DATE")
     exists = cur.fetchone()
     
     if exists:
-        cur.execute("UPDATE caixa_diario SET valor_vendas_vista = %s, observacao = %s WHERE id = %s", 
-                    (valor_venda_vista, observacao, exists['id']))
+        cur.execute("UPDATE caixa_detalhe SET dinheiro = %s, moeda = %s, cartao = %s, pix = %s, observacao = %s WHERE id = %s", 
+                    (dinheiro, moeda, cartao, pix, observacao, exists['id']))
     else:
-        cur.execute("INSERT INTO caixa_diario (data_referencia, valor_vendas_vista, observacao) VALUES (CURRENT_DATE, %s, %s)", 
-                    (valor_venda_vista, observacao))
-    conn.commit()
-    conn.close()
-
-def inserir_despesa(descricao, valor, categoria):
-    conn = get_connection()
-    conn.cursor().execute("INSERT INTO despesas (descricao, valor, categoria, data_despesa) VALUES (%s, %s, %s, CURRENT_DATE)",
-                 (descricao, valor, categoria))
+        cur.execute("INSERT INTO caixa_detalhe (data_referencia, dinheiro, moeda, cartao, pix, observacao) VALUES (CURRENT_DATE, %s, %s, %s, %s, %s)", 
+                    (dinheiro, moeda, cartao, pix, observacao))
     conn.commit()
     conn.close()
 
 def relatorio_mes(mes, ano):
     conn = get_connection()
     cur = conn.cursor()
-    # Postgres precisa de cast para data
-    start_date = f"{ano}-{mes:02d}-01"
-    # Lógica de fim de mês simplificada (fim do mês é < data do proximo mes)
-    # Mas vamos usar o between com strings que o postgres aceita bem YYYY-MM-DD
+    
     import calendar
     last_day = calendar.monthrange(ano, mes)[1]
+    start_date = f"{ano}-{mes:02d}-01"
     end_date = f"{ano}-{mes:02d}-{last_day}"
 
-    cur.execute("SELECT SUM(valor_vendas_vista) as t FROM caixa_diario WHERE data_referencia BETWEEN %s AND %s", (start_date, end_date))
-    vendas = cur.fetchone()['t'] or 0.0
+    cur.execute(
+        "SELECT SUM(dinheiro + moeda + cartao + pix) as t FROM caixa_detalhe WHERE data_referencia BETWEEN %s AND %s", 
+        (start_date, end_date)
+    )
+    vendas_caixa_total = cur.fetchone()['t'] or 0.0
     
-    cur.execute("SELECT SUM(valor) as t FROM pagamentos WHERE DATE(data_pagamento) BETWEEN %s AND %s", (start_date, end_date))
-    recebimentos = cur.fetchone()['t'] or 0.0
+    cur.execute(
+        """
+        SELECT 
+            data_referencia, 
+            (dinheiro + moeda + cartao + pix) AS total_caixa_dia,
+            dinheiro, moeda, cartao, pix
+        FROM caixa_detalhe 
+        WHERE data_referencia BETWEEN %s AND %s 
+        ORDER BY data_referencia DESC
+        """, 
+        (start_date, end_date)
+    )
+    resumo_caixa_diario = cur.fetchall()
+    
+    cur.execute(
+        "SELECT data_despesa, descricao, valor, categoria FROM despesas WHERE data_despesa BETWEEN %s AND %s ORDER BY data_despesa DESC, id DESC", 
+        (start_date, end_date)
+    )
+    lista_despesas_detalhada = cur.fetchall()
     
     cur.execute("SELECT SUM(valor) as t FROM despesas WHERE data_despesa BETWEEN %s AND %s", (start_date, end_date))
-    despesas = cur.fetchone()['t'] or 0.0
+    despesas_total = cur.fetchone()['t'] or 0.0
+    
+    cur.execute("SELECT SUM(valor) as t FROM pagamentos WHERE DATE(data_pagamento) BETWEEN %s AND %s", (start_date, end_date))
+    recuperado_fiado = cur.fetchone()['t'] or 0.0
     
     conn.close()
     
     return {
-        "entradas_caixa": vendas,
-        "recuperado_fiado": recebimentos,
-        "total_saidas": despesas,
-        "saldo": vendas - despesas
+        "entradas_caixa": vendas_caixa_total,
+        "recuperado_fiado": recuperado_fiado,
+        "total_saidas": despesas_total,
+        "saldo": vendas_caixa_total - despesas_total,
+        "lista_despesas_detalhada": lista_despesas_detalhada,
+        "resumo_caixa_diario": resumo_caixa_diario # NOVO CAMPO
     }
 
 def get_meses_disponiveis():
     conn = get_connection()
-    # Extrai mes e ano no Postgres
     query = """
-        SELECT EXTRACT(MONTH FROM data_referencia) as mes, EXTRACT(YEAR FROM data_referencia) as ano FROM caixa_diario
+        SELECT EXTRACT(MONTH FROM data_referencia) as mes, EXTRACT(YEAR FROM data_referencia) as ano FROM caixa_detalhe
         UNION
         SELECT EXTRACT(MONTH FROM data_despesa) as mes, EXTRACT(YEAR FROM data_despesa) as ano FROM despesas
         ORDER BY ano DESC, mes DESC
     """
-    resultado = conn.cursor().execute(query) # execute não retorna, fetchall sim
-    # Correção para psycopg2
     cur = conn.cursor()
     cur.execute(query)
     rows = cur.fetchall()
