@@ -83,6 +83,13 @@ def buscar_usuario_por_id(user_id):
     conn.close()
     return user
 
+def atualizar_senha_usuario(user_id, novo_password_hash):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE usuarios SET password_hash = %s WHERE id = %s", (novo_password_hash, user_id))
+    conn.commit()
+    conn.close()
+
 # --- LÓGICA FINANCEIRA ---
 
 def get_saldo_cliente(cliente_id):

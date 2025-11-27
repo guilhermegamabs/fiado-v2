@@ -19,7 +19,7 @@
         {% if messages %}
             <div class="p-4">
             {% for category, message in messages %}
-                <div class="p-3 rounded-lg mb-2 text-center text-white {{ 'bg-green-500' if category == 'success' else 'bg-red-500' }}">
+                <div class="p-3 rounded-lg mb-2 text-center font-medium {{ 'bg-green-500 text-white' if category == 'success' else 'bg-red-500 text-white' }}">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -32,24 +32,39 @@
     </main>
 
     <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around py-3 z-50">
+        
         <a href="{{ url_for('dashboard') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
             <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
             <span class="text-xs">Resumo</span>
         </a>
+        
         <a href="{{ url_for('registrar_fiado') }}" class="flex flex-col items-center text-blue-600">
             <div class="bg-blue-100 p-3 rounded-full -mt-8 border-4 border-gray-50 shadow-lg">
                 <i class="fa-solid fa-plus text-xl font-bold"></i>
             </div>
             <span class="text-xs font-bold mt-1">Vender</span>
         </a>
+        
         <a href="{{ url_for('clientes') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
             <i class="fa-solid fa-users text-xl mb-1"></i>
             <span class="text-xs">Clientes</span>
         </a>
+        
         <a href="{{ url_for('financeiro') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
             <i class="fa-solid fa-cash-register text-xl mb-1"></i>
             <span class="text-xs">Caixa</span>
         </a>
+
+        <a href="{{ url_for('alterar_senha') }}" class="flex flex-col items-center text-gray-500 hover:text-blue-600">
+            <i class="fa-solid fa-gear text-xl mb-1"></i>
+            <span class="text-xs">Perfil</span>
+        </a>
+
+        <a href="{{ url_for('logout') }}" class="flex flex-col items-center text-gray-500 hover:text-red-600">
+            <i class="fa-solid fa-right-from-bracket text-xl mb-1"></i>
+            <span class="text-xs">Sair</span>
+        </a>
+        
     </nav>
 
 </body>

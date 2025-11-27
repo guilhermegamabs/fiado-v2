@@ -156,6 +156,41 @@ def fechar_caixa():
     flash('Caixa atualizado!', 'success')
     return redirect(url_for('financeiro'))
 
+# No arquivo app.py
+
+@app.route("/perfil/alterar_senha", methods=['GET', 'POST'])
+@login_required
+def alterar_senha():
+    if request.method == 'POST':
+        senha_atual = request.form.get('senha_atual')
+        nova_senha = request.form.get('nova_senha')
+        confirmacao_senha = request.form.get('confirmacao_senha')
+
+        # 1. Verificar a Senha Atual
+        user_data = db.buscar_usuario_por_id(current_user.id)
+        if not check_password_hash(user_data['password_hash'], senha_atual):
+            flash('Senha atual incorreta!', 'error')
+            return redirect(url_for('alterar_senha'))
+
+        # 2. Verificar se as novas senhas batem
+        if nova_senha != confirmacao_senha:
+            flash('A nova senha e a confirmação não coincidem.', 'error')
+            return redirect(url_for('alterar_senha'))
+            
+        # 3. Verificar se a senha tem o tamanho mínimo
+        if len(nova_senha) < 6:
+            flash('A nova senha deve ter no mínimo 6 caracteres.', 'error')
+            return redirect(url_for('alterar_senha'))
+        
+        # 4. Hashear e Salvar
+        novo_hash = generate_password_hash(nova_senha)
+        db.atualizar_senha_usuario(current_user.id, novo_hash)
+        
+        flash('Sua senha foi atualizada com sucesso!', 'success')
+        return redirect(url_for('dashboard'))
+        
+    return render_template('alterar_senha.html') 
+
 @app.route("/financeiro/despesa", methods=['POST'])
 @login_required
 def nova_despesa():
