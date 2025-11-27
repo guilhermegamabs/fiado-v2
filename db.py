@@ -11,12 +11,11 @@ def get_connection():
     url = os.getenv("DATABASE_URL")
     if not url:
         raise ValueError("A variável DATABASE_URL não foi definida no arquivo .env")
-    
     conn = psycopg2.connect(url, cursor_factory=RealDictCursor)
     return conn
 
 def init_db():
-    """Cria as tabelas no PostgreSQL (Sintaxe ajustada para Postgres)"""
+    """Cria as tabelas no PostgreSQL"""
     conn = get_connection()
     c = conn.cursor()
     
@@ -55,8 +54,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- FUNÇÕES DE USUÁRIO (LOGIN) ---
-
 def criar_usuario(username, password_hash):
     conn = get_connection()
     try:
@@ -90,6 +87,8 @@ def atualizar_senha_usuario(user_id, novo_password_hash):
     conn.commit()
     conn.close()
 
+# --- LÓGICA FINANCEIRA ---
+
 def get_saldo_cliente(cliente_id):
     conn = get_connection()
     cur = conn.cursor()
@@ -108,12 +107,15 @@ def registrar_pagamento_abatimento(cliente_id, valor_pago):
     conn = get_connection()
     cur = conn.cursor()
     
+    # 1. Registrar pagamento
     cur.execute("INSERT INTO pagamentos (cliente_id, valor, data_pagamento) VALUES (%s, %s, NOW())", 
                  (cliente_id, valor_pago))
     
+    # 2. Baixa visual (Item por item)
     cur.execute("SELECT id, valor FROM fiados WHERE cliente_id = %s AND pago = FALSE ORDER BY data_registro ASC", (cliente_id,))
     itens_abertos = cur.fetchall()
     
+    # Calcula saldo histórico disponível
     cur.execute("SELECT SUM(valor) as t FROM pagamentos WHERE cliente_id = %s", (cliente_id,))
     res_tot = cur.fetchone()
     total_pago_historico = res_tot['t'] if res_tot['t'] else 0.0
@@ -136,6 +138,7 @@ def registrar_pagamento_abatimento(cliente_id, valor_pago):
     conn.commit()
     conn.close()
 
+# --- CLIENTES E FIADOS ---
 
 def buscar_clientes_com_divida():
     conn = get_connection()
@@ -330,6 +333,7 @@ def relatorio_mes(mes, ano):
 
 def get_meses_disponiveis():
     conn = get_connection()
+    # Extrai mes e ano no Postgres
     query = """
         SELECT EXTRACT(MONTH FROM data_referencia) as mes, EXTRACT(YEAR FROM data_referencia) as ano FROM caixa_detalhe
         UNION
