@@ -108,7 +108,7 @@ def registrar_fiado():
         if cliente_id and valor > 0:
             db.inserir_fiado(cliente_id, descricao, valor)
             flash('Fiado lançado!', 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('registrar_fiado'))
     clientes = db.buscar_clientes_com_divida()
     return render_template("registrar_fiado.html", clientes=clientes)
 
