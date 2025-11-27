@@ -146,19 +146,32 @@ def registrar_pagamento_abatimento(cliente_id, valor_pago):
 def buscar_clientes_com_divida():
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, nome FROM clientes")
-    clientes = cur.fetchall()
+    
+    query = """
+        SELECT
+            c.id,
+            c.nome,
+            -- Calcula a diferença entre Fiados e Pagamentos para cada cliente
+            COALESCE(fiado_sum.total_fiado, 0) - COALESCE(pago_sum.total_pago, 0) AS divida_total
+        FROM clientes c
+        LEFT JOIN (
+            SELECT cliente_id, SUM(valor) AS total_fiado 
+            FROM fiados 
+            GROUP BY cliente_id
+        ) AS fiado_sum ON c.id = fiado_sum.cliente_id
+        LEFT JOIN (
+            SELECT cliente_id, SUM(valor) AS total_pago 
+            FROM pagamentos 
+            GROUP BY cliente_id
+        ) AS pago_sum ON c.id = pago_sum.cliente_id
+        ORDER BY divida_total DESC;
+    """
+    
+    cur.execute(query)
+    clientes_com_saldo = cur.fetchall()
     conn.close()
     
-    lista_final = []
-    for cliente in clientes:
-        divida = get_saldo_cliente(cliente['id'])
-        lista_final.append({
-            "id": cliente['id'],
-            "nome": cliente['nome'],
-            "divida_total": divida
-        })
-    return sorted(lista_final, key=lambda x: x['divida_total'], reverse=True)
+    return clientes_com_saldo
 
 def buscar_cliente(id):
     conn = get_connection()
