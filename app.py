@@ -151,12 +151,18 @@ def financeiro():
 @app.route("/financeiro/fechar_caixa", methods=['POST'])
 @login_required
 def fechar_caixa():
-    valor = float(request.form.get('valor', 0))
-    db.fechar_caixa_dia(valor)
-    flash('Caixa atualizado!', 'success')
-    return redirect(url_for('financeiro'))
+    try:
+        dinheiro = float(request.form.get('dinheiro', '0').replace(',', '.'))
+        moeda = float(request.form.get('moeda', '0').replace(',', '.'))
+        cartao = float(request.form.get('cartao', '0').replace(',', '.'))
+        pix = float(request.form.get('pix', '0').replace(',', '.'))
+    except ValueError:
+        flash("Os valores de caixa devem ser números válidos.", "error")
+        return redirect(url_for('financeiro'))
 
-# No arquivo app.py
+    db.fechar_caixa_dia(dinheiro, moeda, cartao, pix)
+    flash('Caixa detalhado atualizado!', 'success')
+    return redirect(url_for('financeiro'))
 
 @app.route("/perfil/alterar_senha", methods=['GET', 'POST'])
 @login_required
