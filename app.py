@@ -112,11 +112,23 @@ def registrar_fiado():
     if request.method == 'POST':
         cliente_id = request.form.get('cliente_id')
         descricao = request.form.get('descricao')
-        valor = float(request.form.get('valor', 0))
+        
+        try:
+            valor = float(request.form.get('valor', '0').replace(',', '.'))
+        except ValueError:
+            flash("Valor inválido. Use apenas números.", "error")
+            return redirect(url_for('registrar_fiado')) 
+        
         if cliente_id and valor > 0:
             db.inserir_fiado(cliente_id, descricao, valor)
             flash('Fiado lançado!', 'success')
-            return redirect(url_for('cliente_detalhe', cliente_id=int(cliente_id)))
+            
+            return redirect(url_for('ver_cliente', cliente_id=int(cliente_id)))
+        
+        else:
+            flash("Selecione um cliente e insira um valor positivo.", "error")
+            return redirect(url_for('registrar_fiado'))
+
     clientes = db.buscar_clientes_com_divida()
     return render_template("registrar_fiado.html", clientes=clientes)
 
