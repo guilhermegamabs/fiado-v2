@@ -276,6 +276,20 @@ def inserir_despesa(descricao, valor, categoria):
     finally:
         conn.close()
         
+def verificar_cliente_existente(nome):
+    """Verifica se já existe um cliente cadastrado com o nome dado."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM clientes WHERE nome ILIKE %s", (nome.strip(),)) 
+        cliente = cur.fetchone()
+        return cliente is not None 
+    except Exception as e:
+        print(f"Erro ao verificar cliente existente: {e}")
+        return True 
+    finally:
+        conn.close()     
+        
 def fechar_caixa_dia(dinheiro, moeda, cartao, pix, observacao=""):
     conn = get_connection()
     cur = conn.cursor()

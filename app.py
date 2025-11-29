@@ -93,9 +93,17 @@ def clientes():
 @login_required
 def novo_cliente():
     nome = request.form.get('nome')
-    if nome:
-        db.inserir_cliente(nome)
-        flash('Cliente cadastrado!', 'success')
+    
+    if not nome or not nome.strip():
+        flash('O nome do cliente não pode ser vazio.', 'error')
+        return redirect(url_for('clientes'))
+    
+    if db.verificar_cliente_existente(nome):
+        flash(f"ERRO: Já existe um cliente cadastrado com o nome: {nome}. Por favor, use um nome diferente.", 'error')
+        return redirect(url_for('clientes'))
+        
+    db.inserir_cliente(nome)
+    flash('Cliente cadastrado!', 'success')
     return redirect(url_for('clientes'))
 
 @app.route("/fiado/registrar", methods=['GET', 'POST'])
@@ -108,7 +116,7 @@ def registrar_fiado():
         if cliente_id and valor > 0:
             db.inserir_fiado(cliente_id, descricao, valor)
             flash('Fiado lançado!', 'success')
-            return redirect(url_for('registrar_fiado', cliente_id=int(cliente_id)))
+            return redirect(url_for('cliente_detalhe', cliente_id=int(cliente_id)))
     clientes = db.buscar_clientes_com_divida()
     return render_template("registrar_fiado.html", clientes=clientes)
 
