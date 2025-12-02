@@ -47,7 +47,6 @@
     </h3>
     <div class="space-y-2">
       {% for item in itens %}
-        {# A data já vem ajustada do Python (GMT-3). Apenas formatamos. #}
       <div
         class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center gap-2"
       >
@@ -62,8 +61,8 @@
             >
             {% endif %}
           </div>
-          <!-- DATA/HORA FORMATADA -->
-          <p class="text-[10px] text-gray-400">{{ item.data_registro | strftime('%d/%m/%Y %H:%M:%S') }}</p>
+          <!-- DATA/HORA: VOLTANDO AO FORMATO ORIGINAL DO OBJETO DATETIME -->
+          <p class="text-[10px] text-gray-400">{{ item.data_registro }}</p>
         </div>
         
         <!-- Coluna 2: Valor e Botão de Excluir - Compactada -->
@@ -106,8 +105,8 @@
       <div
         class="flex justify-between items-center text-sm px-3 py-2 border-b border-gray-100"
       >
-        <!-- DATA/HORA FORMATADA -->
-        <span class="text-gray-500">{{ pag.data_pagamento | strftime('%d/%m/%Y %H:%M:%S') }}</span>
+        <!-- DATA/HORA: VOLTANDO AO FORMATO ORIGINAL DO OBJETO DATETIME -->
+        <span class="text-gray-500">{{ pag.data_pagamento }}</span>
         <span class="font-bold text-green-600"
           >+ R$ {{ "%.2f"|format(pag.valor) }}</span
         >

@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta # Importando timedelta
+from datetime import datetime # Removida a importação de timedelta
 from dotenv import load_dotenv
 import db
 
@@ -10,6 +10,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "chave_secreta_padrao_dev")
+
+# --- REMOVIDO: FILTRO JINJA2 PARA FORMATAR DATETIME ---
+# A formatação da data será feita no template usando o filtro 'format' padrão do Jinja2/Flask
+# e o objeto datetime original.
 
 # --- CONFIGURAÇÃO DE LOGIN ---
 login_manager = LoginManager()
@@ -169,22 +173,9 @@ def ver_cliente(cliente_id):
     pagamentos = db.buscar_ultimos_pagamentos(cliente_id)
     total = db.get_saldo_cliente(cliente_id)
 
-    # --- NOVO: AJUSTE DE FUSO HORÁRIO (-3 HORAS) ---
-    AJUSTE_FUSO = timedelta(hours=-3)
+    # --- REMOVIDO: AJUSTE DE FUSO HORÁRIO ---
+    # Os dados de data e hora serão passados como vieram do banco de dados (provavelmente UTC)
     
-    # Ajusta o horário dos fiados
-    for item in itens:
-        if item['data_registro']:
-            # Subtrai 3 horas e remove a informação de fuso horário para compatibilidade com o Jinja2
-            item['data_registro'] = item['data_registro'] + AJUSTE_FUSO
-    
-    # Ajusta o horário dos pagamentos
-    for pag in pagamentos:
-        if pag['data_pagamento']:
-            # Subtrai 3 horas e remove a informação de fuso horário
-            pag['data_pagamento'] = pag['data_pagamento'] + AJUSTE_FUSO
-            
-    # O restante dos dados continua o mesmo
     return render_template("cliente_detalhe.html", cliente=cliente, itens=itens, pagamentos=pagamentos, total=total)
 
 @app.route("/cliente/<int:cliente_id>/pagar", methods=['POST'])
