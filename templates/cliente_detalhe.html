@@ -48,26 +48,27 @@
     <div class="space-y-2">
       {% for item in itens %}
       <div
-        class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center gap-2"
+        class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center gap-2"
       >
         <!-- Coluna 1: Descrição e Data - Compactada -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
-            <p class="font-bold text-gray-800 text-sm truncate">{{ item.descricao }}</p>
+            <p class="font-bold text-gray-800 text-xs truncate">{{ item.descricao }}</p>
             {% if item.status == 'Parcial' %}
             <span
-              class="bg-orange-100 text-orange-600 text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+              class="bg-orange-100 text-orange-600 text-[9px] px-1 py-0.5 rounded-full font-bold flex-shrink-0"
               >Restante</span
             >
             {% endif %}
           </div>
-          <p class="text-xs text-gray-400">{{ item.data_registro }}</p>
+          <!-- FORMATANDO A DATA/HORA PARA REMOVER MILISSEGUNDOS -->
+          <p class="text-[10px] text-gray-400">{{ item.data_registro | strftime('%d/%m/%Y %H:%M:%S') }}</p>
         </div>
         
         <!-- Coluna 2: Valor e Botão de Excluir - Compactada -->
         <div class="flex items-center gap-1 flex-shrink-0">
             <span
-              class="font-bold text-base {{ 'text-orange-500' if item.status == 'Parcial' else 'text-gray-700' }} text-right"
+              class="font-bold text-sm {{ 'text-orange-500' if item.status == 'Parcial' else 'text-gray-700' }} text-right"
             >
               R$ {{ "%.2f"|format(item.valor_restante) }}
             </span>
@@ -75,7 +76,7 @@
             <!-- BOTÃO DE EXCLUIR FIADO INDIVIDUALMENTE -->
             <form action="{{ url_for('excluir_fiado', fiado_id=item.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja remover este item de fiado? O saldo será recalculado.');">
                 <button type="submit" class="text-red-400 hover:text-red-600 p-1 transition-colors" title="Excluir Item">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+                    <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
             </form>
         </div>
