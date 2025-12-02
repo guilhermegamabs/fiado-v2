@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 from dotenv import load_dotenv
+import calendar
 
 load_dotenv()
 
@@ -193,10 +194,24 @@ def inserir_fiado(cliente_id, descricao, valor):
     conn.commit()
     conn.close()
 
+def excluir_fiado_por_id(fiado_id):
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM fiados WHERE id = %s", (fiado_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Erro ao excluir fiado {fiado_id}: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
 def buscar_itens_pendentes(cliente_id):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM fiados WHERE cliente_id = %s ORDER BY data_registro ASC", (cliente_id,))
+    cur.execute("SELECT id, descricao, valor, data_registro FROM fiados WHERE cliente_id = %s ORDER BY data_registro ASC", (cliente_id,))
     fiados_todos = cur.fetchall()
     
     cur.execute("SELECT SUM(valor) as t FROM pagamentos WHERE cliente_id = %s", (cliente_id,))
@@ -209,22 +224,22 @@ def buscar_itens_pendentes(cliente_id):
     
     for item in fiados_todos:
         valor_original = item['valor']
+        item_dict = dict(item) 
+        
         if credito_disponivel >= valor_original:
             credito_disponivel -= valor_original
+            continue 
         elif credito_disponivel > 0:
-            valor_restante = valor_original - credito_disponivel
-            item_dict = dict(item) 
-            item_dict['valor_restante'] = valor_restante
+            item_dict['valor_restante'] = valor_original - credito_disponivel
             item_dict['status'] = 'Parcial'
             itens_para_exibir.append(item_dict)
             credito_disponivel = 0
         else:
-            item_dict = dict(item) 
             item_dict['valor_restante'] = valor_original
             item_dict['status'] = 'Pendente'
             itens_para_exibir.append(item_dict)
             
-    return itens_para_exibir[::-1]
+    return itens_para_exibir[::-1] 
 
 def buscar_ultimos_pagamentos(cliente_id, limite=3):
     conn = get_connection()
@@ -288,7 +303,7 @@ def verificar_cliente_existente(nome):
         print(f"Erro ao verificar cliente existente: {e}")
         return True 
     finally:
-        conn.close()     
+        conn.close()
         
 def fechar_caixa_dia(dinheiro, moeda, cartao, pix, observacao=""):
     conn = get_connection()
@@ -310,7 +325,6 @@ def relatorio_mes(mes, ano):
     conn = get_connection()
     cur = conn.cursor()
     
-    import calendar
     last_day = calendar.monthrange(ano, mes)[1]
     start_date = f"{ano}-{mes:02d}-01"
     end_date = f"{ano}-{mes:02d}-{last_day}"
@@ -355,12 +369,11 @@ def relatorio_mes(mes, ano):
         "total_saidas": despesas_total,
         "saldo": vendas_caixa_total - despesas_total,
         "lista_despesas_detalhada": lista_despesas_detalhada,
-        "resumo_caixa_diario": resumo_caixa_diario # NOVO CAMPO
+        "resumo_caixa_diario": resumo_caixa_diario 
     }
 
 def get_meses_disponiveis():
     conn = get_connection()
-    # Extrai mes e ano no Postgres
     query = """
         SELECT EXTRACT(MONTH FROM data_referencia) as mes, EXTRACT(YEAR FROM data_referencia) as ano FROM caixa_detalhe
         UNION

@@ -114,6 +114,7 @@ def registrar_fiado():
         descricao = request.form.get('descricao')
         
         try:
+            # Garante que o valor é float e troca vírgula por ponto
             valor = float(request.form.get('valor', '0').replace(',', '.'))
         except ValueError:
             flash("Valor inválido. Use apenas números.", "error")
@@ -123,6 +124,7 @@ def registrar_fiado():
             db.inserir_fiado(cliente_id, descricao, valor)
             flash('Fiado lançado!', 'success')
             
+            # Redireciona para a tela do cliente (ver_cliente é o endpoint correto)
             return redirect(url_for('ver_cliente', cliente_id=int(cliente_id)))
         
         else:
@@ -131,6 +133,33 @@ def registrar_fiado():
 
     clientes = db.buscar_clientes_com_divida()
     return render_template("registrar_fiado.html", clientes=clientes)
+
+# --- Rota para Excluir Fiado Individualmente ---
+@app.route("/fiado/<int:fiado_id>/excluir", methods=['POST'])
+@login_required
+def excluir_fiado(fiado_id):
+    # Primeiro, pega o ID do cliente associado a este fiado para poder redirecionar
+    conn = db.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT cliente_id FROM fiados WHERE id = %s", (fiado_id,))
+    fiado_info = cur.fetchone()
+    conn.close()
+    
+    if not fiado_info:
+        flash("Fiado não encontrado.", "error")
+        return redirect(url_for('clientes'))
+
+    cliente_id = fiado_info['cliente_id']
+    
+    # Tenta excluir o fiado
+    if db.excluir_fiado_por_id(fiado_id):
+        flash('Fiado excluído com sucesso! O saldo do cliente foi ajustado.', 'success')
+    else:
+        flash('Erro ao excluir fiado.', 'error')
+    
+    # Redireciona de volta para a tela do cliente
+    return redirect(url_for('ver_cliente', cliente_id=cliente_id))
+
 
 @app.route("/cliente/<int:cliente_id>")
 @login_required
