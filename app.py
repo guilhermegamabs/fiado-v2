@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta # Importando timedelta
 from dotenv import load_dotenv
 import db
 
@@ -168,6 +168,23 @@ def ver_cliente(cliente_id):
     itens = db.buscar_itens_pendentes(cliente_id)
     pagamentos = db.buscar_ultimos_pagamentos(cliente_id)
     total = db.get_saldo_cliente(cliente_id)
+
+    # --- NOVO: AJUSTE DE FUSO HORÁRIO (-3 HORAS) ---
+    AJUSTE_FUSO = timedelta(hours=-3)
+    
+    # Ajusta o horário dos fiados
+    for item in itens:
+        if item['data_registro']:
+            # Subtrai 3 horas e remove a informação de fuso horário para compatibilidade com o Jinja2
+            item['data_registro'] = item['data_registro'] + AJUSTE_FUSO
+    
+    # Ajusta o horário dos pagamentos
+    for pag in pagamentos:
+        if pag['data_pagamento']:
+            # Subtrai 3 horas e remove a informação de fuso horário
+            pag['data_pagamento'] = pag['data_pagamento'] + AJUSTE_FUSO
+            
+    # O restante dos dados continua o mesmo
     return render_template("cliente_detalhe.html", cliente=cliente, itens=itens, pagamentos=pagamentos, total=total)
 
 @app.route("/cliente/<int:cliente_id>/pagar", methods=['POST'])

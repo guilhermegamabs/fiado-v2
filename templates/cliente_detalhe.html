@@ -47,8 +47,7 @@
     </h3>
     <div class="space-y-2">
       {% for item in itens %}
-        {# Ajuste de 3 horas para fuso horário GMT-3 #}
-        {% set data_ajustada = item.data_registro.strftime('%Y-%m-%d %H:%M:%S') | to_datetime | add_hours(-3) %}
+        {# A data já vem ajustada do Python (GMT-3). Apenas formatamos. #}
       <div
         class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center gap-2"
       >
@@ -63,8 +62,8 @@
             >
             {% endif %}
           </div>
-          <!-- DATA/HORA FORMATADA COM AJUSTE DE FUSO HORÁRIO -->
-          <p class="text-[10px] text-gray-400">{{ data_ajustada | strftime('%d/%m/%Y %H:%M:%S') }}</p>
+          <!-- DATA/HORA FORMATADA -->
+          <p class="text-[10px] text-gray-400">{{ item.data_registro | strftime('%d/%m/%Y %H:%M:%S') }}</p>
         </div>
         
         <!-- Coluna 2: Valor e Botão de Excluir - Compactada -->
@@ -104,12 +103,11 @@
     </h3>
     <div class="space-y-2 opacity-80">
       {% for pag in pagamentos %}
-        {# Ajuste de 3 horas para fuso horário GMT-3 #}
-        {% set data_pag_ajustada = pag.data_pagamento.strftime('%Y-%m-%d %H:%M:%S') | to_datetime | add_hours(-3) %}
       <div
         class="flex justify-between items-center text-sm px-3 py-2 border-b border-gray-100"
       >
-        <span class="text-gray-500">{{ data_pag_ajustada | strftime('%d/%m/%Y %H:%M:%S') }}</span>
+        <!-- DATA/HORA FORMATADA -->
+        <span class="text-gray-500">{{ pag.data_pagamento | strftime('%d/%m/%Y %H:%M:%S') }}</span>
         <span class="font-bold text-green-600"
           >+ R$ {{ "%.2f"|format(pag.valor) }}</span
         >
