@@ -1,138 +1,125 @@
-{% extends "base.html" %} {% block content %}
-<div class="space-y-6">
-  <div
-    class="bg-white p-6 rounded-2xl shadow-sm text-center border border-gray-100"
-  >
-    <h2 class="text-xl font-bold text-gray-800">{{ cliente.nome }}</h2>
-    <div class="mt-2">
-      <p class="text-gray-500 text-sm">Deve atualmente</p>
-      <p
-        class="text-4xl font-extrabold {{ 'text-green-500' if total <= 0 else 'text-red-500' }}"
-      >
-        R$ {{ "%.2f"|format(total) }}
-      </p>
-    </div>
-  </div>
+{% extends "base.html" %} 
+{% block content %}
 
-  <div class="bg-green-50 p-3 rounded-xl border border-green-200 shadow-sm">
-    <h3 class="font-bold text-green-800 mb-2 text-sm uppercase">
-      <i class="fa-solid fa-hand-holding-dollar mr-1"></i> Receber
-    </h3>
-    <form
-      action="{{ url_for('pagar_divida', cliente_id=cliente.id) }}"
-      method="POST"
-      class="flex gap-2"
-    >
-      <input
-        type="number"
-        step="0.01"
-        name="valor"
-        class="flex-1 p-3 border border-green-300 rounded-lg text-lg font-bold text-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-green-300"
-        placeholder="0.00"
-        required
-        inputmode="decimal"
-      />
-      <button
-        type="submit"
-        class="bg-green-600 text-white px-6 rounded-lg font-bold shadow hover:bg-green-700 transition"
-      >
-        OK
-      </button>
-    </form>
-  </div>
+<div class="space-y-4"> <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+    <div>
+      <h2 class="text-lg font-bold text-gray-800">{{ cliente.nome }}</h2>
+      <p class="text-gray-400 text-xs mt-0.5">Total a receber</p>
+    </div>
+    
+    <div class="text-right">
+      <p class="text-2xl font-extrabold {{ 'text-green-500' if total <= 0 else 'text-red-500' }}">
+        R$ {{ "%.2f"|format(total) }}
+      </p>
+    </div>
+  </div>
 
-  <div>
-    <h3 class="font-bold text-gray-500 text-sm uppercase mb-3 ml-1">
-      O que falta pagar
-    </h3>
-    <div class="space-y-2">
-      {% for item in itens %}
-      <div
-        class="bg-white py-1 px-2 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center gap-2"
-      >
-        <!-- Coluna 1: Descrição e Data - Compactada -->
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <p class="font-bold text-gray-800 text-xs truncate">{{ item.descricao }}</p>
-            {% if item.status == 'Parcial' %}
-            <span
-              class="bg-orange-100 text-orange-600 text-[9px] px-1 py-0.5 rounded-full font-bold flex-shrink-0"
-              >Restante</span
-            >
-            {% endif %}
-          </div>
-          <!-- DATA/HORA: VOLTANDO AO FORMATO ORIGINAL DO OBJETO DATETIME -->
-          <p class="text-[10px] text-gray-400">{{ item.data_registro }}</p>
-        </div>
-        
-        <!-- Coluna 2: Valor e Botão de Excluir - Compactada -->
-        <div class="flex items-center gap-1 flex-shrink-0">
-            <span
-              class="font-bold text-sm {{ 'text-orange-500' if item.status == 'Parcial' else 'text-gray-700' }} text-right"
-            >
-              R$ {{ "%.2f"|format(item.valor_restante) }}
-            </span>
-        
-            <!-- BOTÃO DE EXCLUIR FIADO INDIVIDUALMENTE -->
-            <form action="{{ url_for('excluir_fiado', fiado_id=item.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja remover este item de fiado? O saldo será recalculado.');">
-                <button type="submit" class="text-red-400 hover:text-red-600 p-1 transition-colors" title="Excluir Item">
-                    <i class="fa-solid fa-xmark text-sm"></i>
+  <div class="bg-green-50 p-2 rounded-xl border border-green-200 shadow-sm flex items-center gap-2">
+    <div class="pl-2">
+       <i class="fa-solid fa-hand-holding-dollar text-green-700 text-lg"></i>
+    </div>
+    <form
+      action="{{ url_for('pagar_divida', cliente_id=cliente.id) }}"
+      method="POST"
+      class="flex-1 flex gap-2"
+    >
+      <input
+        type="number"
+        step="0.01"
+        name="valor"
+        class="flex-1 p-2 bg-white border border-green-300 rounded-lg text-base font-bold text-green-700 focus:outline-none focus:ring-1 focus:ring-green-500 placeholder-green-300/70"
+        placeholder="R$ 0.00"
+        required
+        inputmode="decimal"
+      />
+      <button
+        type="submit"
+        class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-green-700 transition text-sm"
+      >
+        OK
+      </button>
+    </form>
+  </div>
+
+  <div>
+    <h3 class="font-bold text-gray-400 text-xs uppercase mb-2 ml-1">
+      Pendências
+    </h3>
+    
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <ul class="divide-y divide-gray-100">
+        {% for item in itens %}
+        <li class="flex justify-between items-center p-3 hover:bg-gray-50 transition-colors">
+          
+          <div class="flex-1 min-w-0 pr-3">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-gray-800 text-sm truncate block">
+                {{ item.descricao }}
+              </span>
+              {% if item.status == 'Parcial' %}
+              <span class="bg-orange-100 text-orange-600 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                Resto
+              </span>
+              {% endif %}
+            </div>
+            <p class="text-[10px] text-gray-400 mt-0.5 font-mono">
+              {{ item.data_registro }}
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <span class="font-bold text-base {{ 'text-orange-500' if item.status == 'Parcial' else 'text-gray-700' }}">
+              R$ {{ "%.2f"|format(item.valor_restante) }}
+            </span>
+
+            <form action="{{ url_for('excluir_fiado', fiado_id=item.id) }}" method="POST" onsubmit="return confirm('Remover item?');">
+                <button type="submit" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all">
+                    <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </form>
-        </div>
-      </div>
-      {% else %}
-      <div
-        class="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300"
-      >
-        <i
-          class="fa-regular fa-face-smile-beam text-4xl text-gray-300 mb-2"
-        ></i>
-        <p class="text-gray-400 font-medium">Tudo pago! Nenhuma pendência.</p>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
+          </div>
+        </li>
+        
+        {% else %}
+        <li class="text-center py-6 px-4">
+            <i class="fa-regular fa-face-smile-beam text-3xl text-gray-300 mb-2 block"></i>
+            <span class="text-gray-400 text-sm font-medium">Tudo pago!</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
 
-  {% if pagamentos %}
-  <div>
-    <h3 class="font-bold text-gray-400 text-xs uppercase mb-2 ml-1 mt-6">
-      Últimos Pagamentos
-      
-    </h3>
-    <div class="space-y-2 opacity-80">
-      {% for pag in pagamentos %}
-      <div
-        class="flex justify-between items-center text-sm px-3 py-2 border-b border-gray-100"
-      >
-        <!-- DATA/HORA: VOLTANDO AO FORMATO ORIGINAL DO OBJETO DATETIME -->
-        <span class="text-gray-500">{{ pag.data_pagamento }}</span>
-        <span class="font-bold text-green-600"
-          >+ R$ {{ "%.2f"|format(pag.valor) }}</span
-        >
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-</div>
-<div class="mt-10 pt-6 border-t border-gray-100">
-  <h3 class="font-bold text-gray-400 text-xs uppercase mb-3 text-center">
-    Gerenciar Cliente
-  </h3>
+  {% if pagamentos %}
+  <div class="opacity-75">
+    <h3 class="font-bold text-gray-400 text-[10px] uppercase mb-1 ml-1 mt-4">
+      Recentes
+    </h3>
+    <div class="bg-white/50 rounded-lg border border-gray-100 divide-y divide-gray-100">
+      {% for pag in pagamentos %}
+      <div class="flex justify-between items-center px-3 py-1.5 text-xs">
+        <span class="text-gray-400 font-mono">{{ pag.data_pagamento }}</span>
+        <span class="font-bold text-green-600">+ R$ {{ "%.2f"|format(pag.valor) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
-  <form
-    action="{{ url_for('excluir_cliente', cliente_id=cliente.id) }}"
-    method="POST"
-    onsubmit="return confirm('Tem certeza ABSOLUTA? Isso apagará todo o histórico de fiados e pagamentos deste cliente para sempre.');"
-  >
-    <button
-      type="submit"
-      class="w-full flex items-center justify-center gap-2 text-red-500 bg-red-50 hover:bg-red-100 p-3 rounded-lg border border-red-100 transition-colors"
-    >
-      <i class="fa-solid fa-trash-can"></i>
-      <span class="font-bold">Excluir Cliente e Histórico</span>
-    </button>
-  </form>
+  <div class="pt-4">
+    <form
+      action="{{ url_for('excluir_cliente', cliente_id=cliente.id) }}"
+      method="POST"
+      onsubmit="return confirm('Tem certeza?');"
+    >
+      <button
+        type="submit"
+        class="w-full text-red-400 text-xs hover:text-red-600 hover:bg-red-50 p-2 rounded transition-colors flex items-center justify-center gap-1"
+      >
+        <i class="fa-solid fa-trash-can"></i> Excluir Cliente
+      </button>
+    </form>
+  </div>
+
 </div>
 {% endblock %}
