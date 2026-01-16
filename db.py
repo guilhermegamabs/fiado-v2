@@ -398,3 +398,72 @@ def get_historico_anual():
         dados = relatorio_mes(mes, ano)
         historico.append({"mes": mes, "ano": ano, "lucro": dados['saldo']})
     return historico
+
+
+def exportar_dados_cliente(cliente_id):
+    """Retorna todos os dados de um cliente em formato de dicionário"""
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    # Buscar dados do cliente
+    cur.execute("SELECT * FROM clientes WHERE id = %s", (cliente_id,))
+    cliente = cur.fetchone()
+    
+    if not cliente:
+        conn.close()
+        return None
+    
+    # Buscar todos os fiados
+    cur.execute("""
+        SELECT id, descricao, valor, data_registro, pago, data_pagamento 
+        FROM fiados 
+        WHERE cliente_id = %s 
+        ORDER BY data_registro DESC
+    """, (cliente_id,))
+    fiados = cur.fetchall()
+    
+    # Buscar todos os pagamentos
+    cur.execute("""
+        SELECT id, valor, data_pagamento 
+        FROM pagamentos 
+        WHERE cliente_id = %s 
+        ORDER BY data_pagamento DESC
+    """, (cliente_id,))
+    pagamentos = cur.fetchall()
+    
+    # Calcular totais
+    cur.execute("SELECT SUM(valor) as t FROM fiados WHERE cliente_id = %s", (cliente_id,))
+    total_fiados = cur.fetchone()['t'] or 0.0
+    
+    cur.execute("SELECT SUM(valor) as t FROM pagamentos WHERE cliente_id = %s", (cliente_id,))
+    total_pagamentos = cur.fetchone()['t'] or 0.0
+    
+    conn.close()
+    
+    return {
+        "cliente": dict(cliente),
+        "fiados": [dict(f) for f in fiados],
+        "pagamentos": [dict(p) for p in pagamentos],
+        "resumo": {
+            "total_fiados": total_fiados,
+            "total_pagamentos": total_pagamentos,
+            "saldo_devedor": total_fiados - total_pagamentos
+        }
+    }
+
+def exportar_todos_clientes():
+    """Retorna dados de todos os clientes"""
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT id FROM clientes ORDER BY nome")
+    clientes_ids = cur.fetchall()
+    conn.close()
+    
+    dados_completos = []
+    for cliente in clientes_ids:
+        dados = exportar_dados_cliente(cliente['id'])
+        if dados:
+            dados_completos.append(dados)
+    
+    return dados_completos

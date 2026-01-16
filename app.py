@@ -1,10 +1,13 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime # Removida a importação de timedelta
 from dotenv import load_dotenv
 import db
+import json
+import csv
+from io import StringIO, BytesIO
 
 load_dotenv()
 
@@ -264,6 +267,125 @@ def nova_despesa():
         db.inserir_despesa(desc, valor, cat)
         flash('Despesa lançada', 'success')
     return redirect(url_for('financeiro'))
+
+@app.route('/exportar/cliente/<int:cliente_id>/json')
+@login_required
+def exportar_cliente_json(cliente_id):
+    """Exporta dados do cliente em formato JSON"""
+    dados = db.exportar_dados_cliente(cliente_id)
+    
+    if not dados:
+        flash("Cliente não encontrado", "error")
+        return redirect(url_for('clientes'))
+    
+    # Converter datetime para string
+    def converter_datetime(obj):
+        if isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        return obj
+    
+    json_str = json.dumps(dados, default=converter_datetime, ensure_ascii=False, indent=2)
+    
+    buffer = BytesIO()
+    buffer.write(json_str.encode('utf-8'))
+    buffer.seek(0)
+    
+    nome_arquivo = f"{dados['cliente']['nome']}_dados_{datetime.now().strftime('%Y%m%d')}.json"
+    
+    return send_file(
+        buffer,
+        mimetype='application/json',
+        as_attachment=True,
+        download_name=nome_arquivo
+    )
+
+@app.route('/exportar/cliente/<int:cliente_id>/csv')
+@login_required
+def exportar_cliente_csv(cliente_id):
+    """Exporta dados do cliente em formato CSV"""
+    dados = db.exportar_dados_cliente(cliente_id)
+    
+    if not dados:
+        flash("Cliente não encontrado", "error")
+        return redirect(url_for('clientes'))
+    
+    output = StringIO()
+    
+    # Cabeçalho do relatório
+    output.write(f"RELATÓRIO DO CLIENTE: {dados['cliente']['nome']}\n")
+    output.write(f"Data da exportação: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
+    output.write(f"\nSaldo Devedor: R$ {dados['resumo']['saldo_devedor']:.2f}\n")
+    output.write(f"Total em Fiados: R$ {dados['resumo']['total_fiados']:.2f}\n")
+    output.write(f"Total de Pagamentos: R$ {dados['resumo']['total_pagamentos']:.2f}\n")
+    output.write("\n")
+    
+    # Fiados
+    output.write("\nFIADOS (COMPRAS)\n")
+    writer = csv.writer(output)
+    writer.writerow(['Data', 'Descrição', 'Valor', 'Status', 'Data Pagamento'])
+    
+    for fiado in dados['fiados']:
+        status = 'Pago' if fiado['pago'] else 'Pendente'
+        data_reg = fiado['data_registro'].strftime('%d/%m/%Y %H:%M') if fiado['data_registro'] else '-'
+        data_pag = fiado['data_pagamento'].strftime('%d/%m/%Y') if fiado['data_pagamento'] else '-'
+        writer.writerow([
+            data_reg,
+            fiado['descricao'],
+            f"R$ {fiado['valor']:.2f}",
+            status,
+            data_pag
+        ])
+    
+    # Pagamentos
+    output.write("\n\nPAGAMENTOS REALIZADOS\n")
+    writer.writerow(['Data', 'Valor'])
+    
+    for pag in dados['pagamentos']:
+        data_pag = pag['data_pagamento'].strftime('%d/%m/%Y %H:%M') if pag['data_pagamento'] else '-'
+        writer.writerow([
+            data_pag,
+            f"R$ {pag['valor']:.2f}"
+        ])
+    
+    output.seek(0)
+    buffer = BytesIO()
+    buffer.write(output.getvalue().encode('utf-8-sig'))  # UTF-8 com BOM para Excel
+    buffer.seek(0)
+    
+    nome_arquivo = f"{dados['cliente']['nome']}_relatorio_{datetime.now().strftime('%Y%m%d')}.csv"
+    
+    return send_file(
+        buffer,
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=nome_arquivo
+    )
+
+@app.route('/exportar/todos-clientes/json')
+@login_required
+def exportar_todos_json():
+    """Exporta dados de todos os clientes em JSON"""
+    dados = db.exportar_todos_clientes()
+    
+    def converter_datetime(obj):
+        if isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        return obj
+    
+    json_str = json.dumps(dados, default=converter_datetime, ensure_ascii=False, indent=2)
+    
+    buffer = BytesIO()
+    buffer.write(json_str.encode('utf-8'))
+    buffer.seek(0)
+    
+    nome_arquivo = f"todos_clientes_{datetime.now().strftime('%Y%m%d')}.json"
+    
+    return send_file(
+        buffer,
+        mimetype='application/json',
+        as_attachment=True,
+        download_name=nome_arquivo
+    )
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)
