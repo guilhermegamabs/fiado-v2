@@ -467,3 +467,29 @@ def exportar_todos_clientes():
             dados_completos.append(dados)
     
     return dados_completos
+
+def exportar_resumo_clientes():
+    """Retorna apenas o resumo financeiro de cada cliente (super leve)"""
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    # Uma única query eficiente que já calcula tudo
+    query = """
+        SELECT
+            c.id,
+            c.nome,
+            COALESCE(SUM(f.valor), 0.0) AS total_fiado,
+            COALESCE(SUM(p.valor), 0.0) AS total_pago,
+            COALESCE(SUM(f.valor), 0.0) - COALESCE(SUM(p.valor), 0.0) AS saldo_devedor
+        FROM clientes c
+        LEFT JOIN fiados f ON c.id = f.cliente_id
+        LEFT JOIN pagamentos p ON c.id = p.cliente_id
+        GROUP BY c.id, c.nome
+        ORDER BY c.nome
+    """
+    
+    cur.execute(query)
+    clientes = cur.fetchall()
+    conn.close()
+    
+    return [dict(c) for c in clientes]

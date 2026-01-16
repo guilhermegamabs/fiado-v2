@@ -268,121 +268,58 @@ def nova_despesa():
         flash('Despesa lançada', 'success')
     return redirect(url_for('financeiro'))
 
-@app.route('/exportar/cliente/<int:cliente_id>/json')
+@app.route('/exportar/clientes/csv')
 @login_required
-def exportar_cliente_json(cliente_id):
-    """Exporta dados do cliente em formato JSON"""
-    dados = db.exportar_dados_cliente(cliente_id)
-    
-    if not dados:
-        flash("Cliente não encontrado", "error")
-        return redirect(url_for('clientes'))
-    
-    # Converter datetime para string
-    def converter_datetime(obj):
-        if isinstance(obj, datetime):
-            return obj.strftime('%Y-%m-%d %H:%M:%S')
-        return obj
-    
-    json_str = json.dumps(dados, default=converter_datetime, ensure_ascii=False, indent=2)
-    
-    buffer = BytesIO()
-    buffer.write(json_str.encode('utf-8'))
-    buffer.seek(0)
-    
-    nome_arquivo = f"{dados['cliente']['nome']}_dados_{datetime.now().strftime('%Y%m%d')}.json"
-    
-    return send_file(
-        buffer,
-        mimetype='application/json',
-        as_attachment=True,
-        download_name=nome_arquivo
-    )
-
-@app.route('/exportar/cliente/<int:cliente_id>/csv')
-@login_required
-def exportar_cliente_csv(cliente_id):
-    """Exporta dados do cliente em formato CSV"""
-    dados = db.exportar_dados_cliente(cliente_id)
-    
-    if not dados:
-        flash("Cliente não encontrado", "error")
-        return redirect(url_for('clientes'))
+def exportar_clientes_csv():
+    """Exporta resumo financeiro de todos os clientes em CSV - SUPER LEVE"""
+    dados = db.exportar_resumo_clientes()
     
     output = StringIO()
+    writer = csv.writer(output)
     
     # Cabeçalho do relatório
-    output.write(f"RELATÓRIO DO CLIENTE: {dados['cliente']['nome']}\n")
-    output.write(f"Data da exportação: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
-    output.write(f"\nSaldo Devedor: R$ {dados['resumo']['saldo_devedor']:.2f}\n")
-    output.write(f"Total em Fiados: R$ {dados['resumo']['total_fiados']:.2f}\n")
-    output.write(f"Total de Pagamentos: R$ {dados['resumo']['total_pagamentos']:.2f}\n")
+    output.write(f"RESUMO FINANCEIRO - ESTAÇÃO DO LANCHE\n")
+    output.write(f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
+    output.write(f"Total de Clientes: {len(dados)}\n")
     output.write("\n")
     
-    # Fiados
-    output.write("\nFIADOS (COMPRAS)\n")
-    writer = csv.writer(output)
-    writer.writerow(['Data', 'Descrição', 'Valor', 'Status', 'Data Pagamento'])
+    # Cabeçalhos da tabela
+    writer.writerow(['ID', 'Nome do Cliente', 'Total Fiado', 'Total Pago', 'Saldo Devedor'])
     
-    for fiado in dados['fiados']:
-        status = 'Pago' if fiado['pago'] else 'Pendente'
-        data_reg = fiado['data_registro'].strftime('%d/%m/%Y %H:%M') if fiado['data_registro'] else '-'
-        data_pag = fiado['data_pagamento'].strftime('%d/%m/%Y') if fiado['data_pagamento'] else '-'
+    # Dados dos clientes
+    total_geral_fiado = 0
+    total_geral_pago = 0
+    total_geral_saldo = 0
+    
+    for cliente in dados:
         writer.writerow([
-            data_reg,
-            fiado['descricao'],
-            f"R$ {fiado['valor']:.2f}",
-            status,
-            data_pag
+            cliente['id'],
+            cliente['nome'],
+            f"R$ {cliente['total_fiado']:.2f}",
+            f"R$ {cliente['total_pago']:.2f}",
+            f"R$ {cliente['saldo_devedor']:.2f}"
         ])
+        total_geral_fiado += cliente['total_fiado']
+        total_geral_pago += cliente['total_pago']
+        total_geral_saldo += cliente['saldo_devedor']
     
-    # Pagamentos
-    output.write("\n\nPAGAMENTOS REALIZADOS\n")
-    writer.writerow(['Data', 'Valor'])
-    
-    for pag in dados['pagamentos']:
-        data_pag = pag['data_pagamento'].strftime('%d/%m/%Y %H:%M') if pag['data_pagamento'] else '-'
-        writer.writerow([
-            data_pag,
-            f"R$ {pag['valor']:.2f}"
-        ])
+    # Linha de totais
+    output.write("\n")
+    writer.writerow(['', 'TOTAL GERAL', 
+                     f"R$ {total_geral_fiado:.2f}", 
+                     f"R$ {total_geral_pago:.2f}", 
+                     f"R$ {total_geral_saldo:.2f}"])
     
     output.seek(0)
     buffer = BytesIO()
     buffer.write(output.getvalue().encode('utf-8-sig'))  # UTF-8 com BOM para Excel
     buffer.seek(0)
     
-    nome_arquivo = f"{dados['cliente']['nome']}_relatorio_{datetime.now().strftime('%Y%m%d')}.csv"
+    nome_arquivo = f"resumo_clientes_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
     
     return send_file(
         buffer,
         mimetype='text/csv',
-        as_attachment=True,
-        download_name=nome_arquivo
-    )
-
-@app.route('/exportar/todos-clientes/json')
-@login_required
-def exportar_todos_json():
-    """Exporta dados de todos os clientes em JSON"""
-    dados = db.exportar_todos_clientes()
-    
-    def converter_datetime(obj):
-        if isinstance(obj, datetime):
-            return obj.strftime('%Y-%m-%d %H:%M:%S')
-        return obj
-    
-    json_str = json.dumps(dados, default=converter_datetime, ensure_ascii=False, indent=2)
-    
-    buffer = BytesIO()
-    buffer.write(json_str.encode('utf-8'))
-    buffer.seek(0)
-    
-    nome_arquivo = f"todos_clientes_{datetime.now().strftime('%Y%m%d')}.json"
-    
-    return send_file(
-        buffer,
-        mimetype='application/json',
         as_attachment=True,
         download_name=nome_arquivo
     )

@@ -15,22 +15,6 @@
     </div>
   </div>
 
-  <!-- Botões de Exportação -->
-  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-xl border border-blue-200 shadow-sm">
-    <div class="flex items-center gap-2 mb-2">
-      <i class="fa-solid fa-download text-blue-600 text-sm"></i>
-      <span class="text-xs font-bold text-blue-700 uppercase">Exportar Dados</span>
-    </div>
-    <div class="flex gap-2">
-      <a href="{{ url_for('exportar_cliente_json', cliente_id=cliente.id) }}" class="flex-1 bg-white text-blue-600 text-xs py-2 rounded-lg text-center font-bold hover:bg-blue-50 transition shadow-sm flex items-center justify-center gap-1.5">
-        <i class="fa-solid fa-file-code"></i> JSON
-      </a>
-      <a href="{{ url_for('exportar_cliente_csv', cliente_id=cliente.id) }}" class="flex-1 bg-white text-blue-600 text-xs py-2 rounded-lg text-center font-bold hover:bg-blue-50 transition shadow-sm flex items-center justify-center gap-1.5">
-        <i class="fa-solid fa-file-csv"></i> CSV/Excel
-      </a>
-    </div>
-  </div>
-
   <div class="bg-green-50 p-2 rounded-xl border border-green-200 shadow-sm flex items-center gap-2">
     <div class="pl-2">
        <i class="fa-solid fa-hand-holding-dollar text-green-700 text-lg"></i>
